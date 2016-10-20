@@ -1,0 +1,3 @@
+mpicc -o integrale integrale.c
+mpirun -np 4 ./integrale
+

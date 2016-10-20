@@ -1,3 +1,4 @@
 mpicc -o integrale integrale.c
 mpirun -np 4 ./integrale
+mpirun -np 30 -host pc5103a,pc5103b,pc5103c,pc5103d,pc5103e,pc5103g ./structure
 

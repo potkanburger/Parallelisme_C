@@ -28,7 +28,7 @@ int main( int argc, char *argv[] )
 	
 	if(rank==0){
 		MPI_Send(&xlocal[(maxn/size)], maxn, MPI_DOUBLE, rank+1, 99, MPI_COMM_WORLD);
-		MPI_Recv(&xrecuB, maxn, MPI_DOUBLE, rank+1, 99, MPI_COMM_WORLD, &status);
+		MPI_Recv(&xrecuB, maxn, MPI_DOUBLE, rank+1, 99, MPI_COMM_WORLD);
 		for(i=0;i<maxn;i++)
 		{
 			xlocal[i][(maxn/size)+1] = xrecuB[i];	
@@ -36,7 +36,7 @@ int main( int argc, char *argv[] )
 	}
 	else if(rank==(size-1)){
 		MPI_Send(&xlocal[0], maxn, MPI_DOUBLE, rank-1, 99, MPI_COMM_WORLD);
-		MPI_Recv(&xrecuA, maxn, MPI_DOUBLE, rank-1, 99, MPI_COMM_WORLD, &status);
+		MPI_Recv(&xrecuA, maxn, MPI_DOUBLE, rank-1, 99, MPI_COMM_WORLD);
 		for(i=0;i<maxn;i++)
 		{
 			xlocal[i][0] = xrecuA[i];	
@@ -45,8 +45,8 @@ int main( int argc, char *argv[] )
 	else{
 		MPI_Send(&xlocal[0], maxn, MPI_DOUBLE, rank-1, 99, MPI_COMM_WORLD);
 		MPI_Send(&xlocal[(maxn/size)], maxn, MPI_DOUBLE, rank+1, 99, MPI_COMM_WORLD);
-		MPI_Recv(&xrecuA, maxn, MPI_DOUBLE, rank-1, 99, MPI_COMM_WORLD, &status);
-		MPI_Recv(&xrecuB, maxn, MPI_DOUBLE, rank+1, 99, MPI_COMM_WORLD, &status);
+		MPI_Recv(&xrecuA, maxn, MPI_DOUBLE, rank-1, 99, MPI_COMM_WORLD);
+		MPI_Recv(&xrecuB, maxn, MPI_DOUBLE, rank+1, 99, MPI_COMM_WORLD);
 		for(i=0;i<maxn;i++)
 		{
 			xlocal[i][0] = xrecuA[i];	
