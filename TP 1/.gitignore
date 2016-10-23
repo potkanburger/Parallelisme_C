@@ -1,0 +1,11 @@
+/bin
+*.result
+*.triangule
+*.triangule.back
+m4
+m16
+m500
+m1000
+m5000
+m10000
+Makefile
