@@ -30,8 +30,8 @@ void matrix_load_par(int me, int tids[], char nom[], double *tab, int n, int nbp
 	FILE *f;
 	int p = nbproc;
 	int i, j;
-	int count = 1;
-	int stride = n;
+	int stride = 1;
+	int count = 0;
 	int msgtag = -1;
 	int dest, src; 	
 	double *buf;
@@ -39,20 +39,23 @@ void matrix_load_par(int me, int tids[], char nom[], double *tab, int n, int nbp
 	buf = malloc(n*sizeof(double));
 		
 		
-	if(pvm_gettid(GRPNAME, me) == 0)
+	if(me == 0)
 	{
 		if ((f = fopen (nom, "r")) == NULL) { perror ("matrix_load : fopen "); }
 		for(i=0 ; i < n ; i++)
 		{
-			if(i%p == 0){}
-			else{ 
-				for (j=0; j<n; j++) {
-					fscanf (f, "%lf", (buf+i*n+j) );
-				}
+			for (j = 0; j<n; j++) {
+				fscanf(f, "%lf", (buf + j));
+			}
 
+			if(i%p == 0){
+				memcpy(tab + count*n, buf, n*sizeof(double));
+				count++;
+			}
+			else{ 
 				dest = pvm_gettid(GRPNAME, tids[i%p]);
 				pvm_initsend(PvmDataDefault);
-				pvm_pkdouble(buf, count, stride);
+				pvm_pkdouble(buf, n, stride);
 				pvm_send(dest, msgtag);//envoi ligne à i%p
 			}
 		}
@@ -61,13 +64,9 @@ void matrix_load_par(int me, int tids[], char nom[], double *tab, int n, int nbp
 	else{
 		for(j=0 ; j < n/p ; j++)
 		{
-			src = pvm_gettid(GRPNAME, tids[0]);
+			src = pvm_gettid(GRPNAME, 0);
 			pvm_recv( src, msgtag );
-        		pvm_upkdouble( buf, count, stride );//recoit de p0
-			for(i=0;i<n; i++){
-				tab[received_lines*n+i] = buf[i];
-			}
-			received_lines += 1;
+        	pvm_upkdouble( tab+j*n, n, stride );//recoit de p0
 		}
 	}
 
