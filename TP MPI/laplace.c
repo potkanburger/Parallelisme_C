@@ -1,0 +1,179 @@
+#include "mpi.h"
+#include <stdio.h>
+#include <math.h>
+
+int main( int argc, char *argv[] )
+{
+	int rank, size;
+	MPI_Status status;
+	MPI_Init( &argc, &argv );
+	MPI_Comm_rank( MPI_COMM_WORLD, &rank );
+	MPI_Comm_size( MPI_COMM_WORLD, &size );
+
+	int maxn = 20;
+	double err = 0.0;
+	double convergence = 1.0;
+	double convergence_locale = 0.0;
+
+	double f[(maxn/size)+2][maxn];
+	double fnew[(maxn/size)+2][maxn];
+	
+	double xrecuA[maxn];
+	double xrecuB[maxn];
+	int i,j;
+	
+	for(i=0;i<maxn;i++)
+	{
+		f[0][i] = -1;
+		f[(maxn/size)+1][i] = -1;	
+	}
+	for(i=1;i<(maxn/size)+1;i++)
+	{
+		for(j=0;j<maxn;j++)
+		{
+			f[i][j] = rank;
+		}
+	}
+	
+	
+	if(rank==0){
+		MPI_Send(&f[(maxn/size)], maxn, MPI_DOUBLE, rank+1, 99, MPI_COMM_WORLD);
+		MPI_Recv(&xrecuB, maxn, MPI_DOUBLE, rank+1, 99, MPI_COMM_WORLD, &status);	
+	}
+	else if(rank==(size-1)){
+		MPI_Send(&f[1], maxn, MPI_DOUBLE, rank-1, 99, MPI_COMM_WORLD);
+		MPI_Recv(&xrecuA, maxn, MPI_DOUBLE, rank-1, 99, MPI_COMM_WORLD, &status);
+	}
+	else{
+		MPI_Send(&f[1], maxn, MPI_DOUBLE, rank-1, 99, MPI_COMM_WORLD);
+		MPI_Recv(&xrecuA, maxn, MPI_DOUBLE, rank-1, 99, MPI_COMM_WORLD, &status);
+
+		MPI_Send(&f[(maxn/size)], maxn, MPI_DOUBLE, rank+1, 99, MPI_COMM_WORLD);
+		MPI_Recv(&xrecuB, maxn, MPI_DOUBLE, rank+1, 99, MPI_COMM_WORLD, &status);	
+	}
+	MPI_Barrier(MPI_COMM_WORLD);
+
+	if(rank==0){
+		
+		for(i=0;i<maxn;i++)
+		{
+			f[(maxn/size)+1][i] = xrecuB[i];	
+		}
+	}
+	else if(rank==(size-1)){
+		for(i=0;i<maxn;i++)
+		{
+			f[0][i] = xrecuA[i];	
+		}
+	}
+	else{
+		for(i=0;i<maxn;i++)
+		{
+			f[0][i] = xrecuA[i];	
+			f[(maxn/size)+1][i] = xrecuB[i];	
+		}
+	}
+	
+	/*if(rank==0){
+		for(j=0;j<maxn;j++){
+			f[1][j] = -1;
+		}
+	}
+	
+	if(rank==(size-1)){
+		for(j=0;j<maxn;j++){
+			f[(maxn/size)][j] = -1;
+		}
+	}*/
+	
+	
+	
+	for(i=0;i<(maxn/size)+2;i++){
+		for(j=0;j<maxn;j++){
+			fnew[i][j] = f[i][j];
+		}
+	}
+	
+	
+	
+	while(convergence>0.01) {
+				
+		for(i=1;i<(maxn/size)+1;i++){
+			for(j=1;j<maxn-1;j++){
+				fnew[i][j] = 0.25*(f[i+1][j]+f[i-1][j]+f[i][j+1]+f[i][j-1]);
+			}
+		}
+		
+		err = 0.0;
+		for(i=1;i<(maxn/size)+1;i++){
+			for(j=1;j<maxn-1;j++){
+				err += (fnew[i][j]-f[i][j])*(fnew[i][j]-f[i][j]);	
+			}
+		}
+
+		convergence_locale = sqrt(err);
+		
+		MPI_Allreduce(&convergence_locale, &convergence, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+		MPI_Barrier(MPI_COMM_WORLD);
+			
+		for(i=0;i<(maxn/size)+2;i++){
+			for(j=0;j<maxn;j++){
+				f[i][j] = fnew[i][j];
+			}
+		}
+		
+		if(rank==0){
+			MPI_Send(&f[(maxn/size)], maxn, MPI_DOUBLE, rank+1, 99, MPI_COMM_WORLD);
+			MPI_Recv(&xrecuB, maxn, MPI_DOUBLE, rank+1, 99, MPI_COMM_WORLD, &status);	
+		}
+		else if(rank==(size-1)){
+			MPI_Send(&f[1], maxn, MPI_DOUBLE, rank-1, 99, MPI_COMM_WORLD);
+			MPI_Recv(&xrecuA, maxn, MPI_DOUBLE, rank-1, 99, MPI_COMM_WORLD, &status);
+		}
+		else{
+			MPI_Send(&f[1], maxn, MPI_DOUBLE, rank-1, 99, MPI_COMM_WORLD);
+			MPI_Recv(&xrecuA, maxn, MPI_DOUBLE, rank-1, 99, MPI_COMM_WORLD, &status);
+
+			MPI_Send(&f[(maxn/size)], maxn, MPI_DOUBLE, rank+1, 99, MPI_COMM_WORLD);
+			MPI_Recv(&xrecuB, maxn, MPI_DOUBLE, rank+1, 99, MPI_COMM_WORLD, &status);	
+		}
+		MPI_Barrier(MPI_COMM_WORLD);
+
+		if(rank==0){
+		
+			for(i=0;i<maxn;i++)
+			{
+				f[(maxn/size)+1][i] = xrecuB[i];	
+			}
+		}
+		else if(rank==(size-1)){
+			for(i=0;i<maxn;i++)
+			{
+				f[0][i] = xrecuA[i];	
+			}
+		}
+		else{
+			for(i=0;i<maxn;i++)
+			{
+				f[0][i] = xrecuA[i];	
+				f[(maxn/size)+1][i] = xrecuB[i];	
+			}
+		}
+	}
+	
+	if(rank==0){
+		printf("\nrank: %d\n", rank);
+		for(i=0;i<(maxn/size)+2;i++)
+		{
+			for(j=0;j<maxn;j++)
+			{
+				printf("%.2f ", f[i][j]);
+			}
+			printf("\n");		
+		}
+		printf("\n\n");
+		fflush(stdout);		
+	}
+	MPI_Barrier(MPI_COMM_WORLD);
+		
+}
