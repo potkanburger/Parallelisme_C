@@ -9,58 +9,76 @@ int main( int argc, char *argv[] )
 	MPI_Comm_size( MPI_COMM_WORLD, &size );
 	int maxn = 20;
 	double x[maxn][maxn];
-	double xlocal[maxn][(maxn/size)+2];
+	double xlocal[(maxn/size)+2][maxn];
 	double xrecuA[maxn];
 	double xrecuB[maxn];
 	int i,j;
 	for(i=0;i<maxn;i++)
 	{
-		xlocal[i][0] = -1;
-		xlocal[i][(maxn/size)+1] = -1;	
+		xlocal[0][i] = -1;
+		xlocal[(maxn/size)+1][i] = -1;	
 	}
-	for(j=1;j<(maxn/size)+1;j++)
+	for(i=1;i<(maxn/size)+1;i++)
 	{
-		for(i=0;i<maxn;i++)
+		for(j=0;j<maxn;j++)
 		{
 			xlocal[i][j] = rank;
 		}
 	}
 	
+	
 	if(rank==0){
 		MPI_Send(&xlocal[(maxn/size)], maxn, MPI_DOUBLE, rank+1, 99, MPI_COMM_WORLD);
-		MPI_Recv(&xrecuB, maxn, MPI_DOUBLE, rank+1, 99, MPI_COMM_WORLD, &status);
+		MPI_Recv(&xrecuB, maxn, MPI_DOUBLE, rank+1, 99, MPI_COMM_WORLD, &status);	
+	}
+	else if(rank==(size-1)){
+		MPI_Send(&xlocal[1], maxn, MPI_DOUBLE, rank-1, 99, MPI_COMM_WORLD);
+		MPI_Recv(&xrecuA, maxn, MPI_DOUBLE, rank-1, 99, MPI_COMM_WORLD, &status);
+	}
+	else{
+		MPI_Send(&xlocal[1], maxn, MPI_DOUBLE, rank-1, 99, MPI_COMM_WORLD);
+		MPI_Recv(&xrecuA, maxn, MPI_DOUBLE, rank-1, 99, MPI_COMM_WORLD, &status);
+		
+		MPI_Send(&xlocal[(maxn/size)], maxn, MPI_DOUBLE, rank+1, 99, MPI_COMM_WORLD);
+		MPI_Recv(&xrecuB, maxn, MPI_DOUBLE, rank+1, 99, MPI_COMM_WORLD, &status);	
+	}
+	MPI_Barrier(MPI_COMM_WORLD);
+	
+	
+	if(rank==0){
 		for(i=0;i<maxn;i++)
 		{
-			xlocal[i][(maxn/size)+1] = xrecuB[i];	
+			xlocal[(maxn/size)+1][i] = xrecuB[i];	
 		}
 	}
 	else if(rank==(size-1)){
-		MPI_Send(&xlocal[0], maxn, MPI_DOUBLE, rank-1, 99, MPI_COMM_WORLD);
-		MPI_Recv(&xrecuA, maxn, MPI_DOUBLE, rank-1, 99, MPI_COMM_WORLD, &status);
 		for(i=0;i<maxn;i++)
 		{
-			xlocal[i][0] = xrecuA[i];	
+			xlocal[0][i] = xrecuA[i];	
 		}
 	}
 	else{
-		MPI_Send(&xlocal[0], maxn, MPI_DOUBLE, rank-1, 99, MPI_COMM_WORLD);
-		MPI_Send(&xlocal[(maxn/size)], maxn, MPI_DOUBLE, rank+1, 99, MPI_COMM_WORLD);
-		MPI_Recv(&xrecuA, maxn, MPI_DOUBLE, rank-1, 99, MPI_COMM_WORLD, &status);
-		MPI_Recv(&xrecuB, maxn, MPI_DOUBLE, rank+1, 99, MPI_COMM_WORLD, &status);
 		for(i=0;i<maxn;i++)
 		{
-			xlocal[i][0] = xrecuA[i];	
-			xlocal[i][(maxn/size)+1] = xrecuB[i];	
+			xlocal[0][i] = xrecuA[i];	
+			xlocal[(maxn/size)+1][i] = xrecuB[i];	
 		}
 	}
-	printf("rank: %d", rank);
-	for(j=0;j<(maxn/size)+2;j++)
-	{
-		for(i=0;i<maxn;i++)
+	
+	
+	if(rank==1){
+		printf("rank: %d\n", rank);
+		for(i=0;i<(maxn/size)+2;i++)
 		{
-			printf("%lf", xlocal[i][j]);
+			for(j=0;j<maxn;j++)
+			{
+				printf("%.1f ", xlocal[i][j]);
+			}
+			printf("\n");		
 		}
+		printf("\n\n");
+		fflush(stdout);		
 	}
-	printf("\n");
+	MPI_Barrier(MPI_COMM_WORLD);
 	
 }
