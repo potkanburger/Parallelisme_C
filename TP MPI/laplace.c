@@ -96,7 +96,7 @@ int main( int argc, char *argv[] )
 	
 	
 	
-	while(convergence>0.01) {
+	while(convergence>0.001) {
 				
 		for(i=1;i<(maxn/size)+1;i++){
 			for(j=1;j<maxn-1;j++){
@@ -123,18 +123,18 @@ int main( int argc, char *argv[] )
 		}
 		
 		if(rank==0){
-			MPI_Send(&f[(maxn/size)], maxn, MPI_DOUBLE, rank+1, 99, MPI_COMM_WORLD);
+			MPI_Send(&fnew[(maxn/size)], maxn, MPI_DOUBLE, rank+1, 99, MPI_COMM_WORLD);
 			MPI_Recv(&xrecuB, maxn, MPI_DOUBLE, rank+1, 99, MPI_COMM_WORLD, &status);	
 		}
 		else if(rank==(size-1)){
-			MPI_Send(&f[1], maxn, MPI_DOUBLE, rank-1, 99, MPI_COMM_WORLD);
+			MPI_Send(&fnew[1], maxn, MPI_DOUBLE, rank-1, 99, MPI_COMM_WORLD);
 			MPI_Recv(&xrecuA, maxn, MPI_DOUBLE, rank-1, 99, MPI_COMM_WORLD, &status);
 		}
 		else{
-			MPI_Send(&f[1], maxn, MPI_DOUBLE, rank-1, 99, MPI_COMM_WORLD);
+			MPI_Send(&fnew[1], maxn, MPI_DOUBLE, rank-1, 99, MPI_COMM_WORLD);
 			MPI_Recv(&xrecuA, maxn, MPI_DOUBLE, rank-1, 99, MPI_COMM_WORLD, &status);
 
-			MPI_Send(&f[(maxn/size)], maxn, MPI_DOUBLE, rank+1, 99, MPI_COMM_WORLD);
+			MPI_Send(&fnew[(maxn/size)], maxn, MPI_DOUBLE, rank+1, 99, MPI_COMM_WORLD);
 			MPI_Recv(&xrecuB, maxn, MPI_DOUBLE, rank+1, 99, MPI_COMM_WORLD, &status);	
 		}
 		MPI_Barrier(MPI_COMM_WORLD);
@@ -160,6 +160,60 @@ int main( int argc, char *argv[] )
 			}
 		}
 	}
+	
+	
+		
+	
+	if(rank>0){
+		MPI_Send(&f, maxn*((maxn/size)+2), MPI_DOUBLE, 0, 99, MPI_COMM_WORLD);
+	}
+	
+		
+	if(rank==0){
+		FILE * file;
+		int k;
+		file = fopen ("result_laplace", "w+");
+		double recu[(maxn/size)+2][maxn];
+		double bord = -1.00;
+		
+		for(j=0;j<maxn;j++)
+		{
+			fprintf(file, "%.2f ", bord);
+		}
+		fprintf(file, "\n");
+		
+		for(i=1;i<(maxn/size)+1;i++)
+		{
+			for(j=0;j<maxn;j++)
+			{
+				fprintf(file, "%.2f ", f[i][j]);
+			}
+			fprintf(file, "\n");		
+		}
+		
+		
+		for(k=1;k<size;k++){
+			MPI_Recv(&recu, maxn*((maxn/size)+2), MPI_DOUBLE, k, 99, MPI_COMM_WORLD, &status);
+			for(i=1;i<(maxn/size)+1;i++)
+			{
+				for(j=0;j<maxn;j++)
+				{
+					fprintf(file, "%.2f ", recu[i][j]);
+				}
+				fprintf(file, "\n");		
+			}
+			fflush(stdout);
+		}
+		for(j=0;j<maxn;j++)
+		{
+			fprintf(file, "%.2f ", bord);
+		}
+		fprintf(file, "\n");
+		fclose(file);
+	}
+	
+	
+	
 	
 	if(rank==0){
 		printf("\nrank: %d\n", rank);
