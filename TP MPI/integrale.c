@@ -10,28 +10,7 @@ int main( int argc, char *argv[] )
 	MPI_Comm_size( MPI_COMM_WORLD, &size );
 	int decoupage = 10000000;
 	int decoupageParProc = decoupage/size;
-	//printf( "I am %d of %d\n", rank, size );
-	//
-	
-	/*if (rank == 0) {
-		//code for process zero
-		strcpy(message,"Hello, there");
-		double aire = 0;
-		//MPI_Send(message, strlen(message), MPI_CHAR, 1, 99, MPI_COMM_WORLD);
-		double partie;
-		double x;
-		for(partie = 0 ; partie < decoupage ; partie++)
-		{
-			x = partie/decoupage;
-			aire = aire + ((1/(1+x*x)) * (1.0/decoupage));
-			
-		}
-		aire = aire *4;
-		printf("keshnée :%lf\n", aire);
-		
-		
-		
-	}*/
+
 	double tmptime = MPI_Wtime();
 	double comp_time; 
 	
@@ -45,14 +24,10 @@ int main( int argc, char *argv[] )
 		x = partie/decoupage;
 		aire = aire + ((1/(1+x*x)) * (1.0/decoupage));		
 	}
-	//printf("rank %d : aire %lf\n", rank, aire);
 	
-	//MPI_Bcast(&message, sizeof(char)*sizeof(message), MPI_CHAR, 0, MPI_COMM_WORLD);
 	MPI_Reduce(&aire, &resultat, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	comp_time = MPI_Wtime()-tmptime;
 	if(rank==0){
-	/* code for other processes */
-		//MPI_Recv(message, 20, MPI_CHAR, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 		resultat = resultat*4;
 		printf("Comp time for proc. 0 = %5.2f seconds\n", comp_time);
 		printf("resultat %lf\n", resultat);
