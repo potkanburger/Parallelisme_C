@@ -74,20 +74,7 @@ int main( int argc, char *argv[] )
 		}
 	}
 	
-	/*if(rank==0){
-		for(j=0;j<maxn;j++){
-			f[1][j] = -1;
-		}
-	}
-	
-	if(rank==(size-1)){
-		for(j=0;j<maxn;j++){
-			f[(maxn/size)][j] = -1;
-		}
-	}*/
-	
-	
-	
+		
 	for(i=0;i<(maxn/size)+2;i++){
 		for(j=0;j<maxn;j++){
 			fnew[i][j] = f[i][j];
@@ -212,22 +199,7 @@ int main( int argc, char *argv[] )
 		fclose(file);
 	}
 	
-	
-	
-	
-	if(rank==0){
-		printf("\nrank: %d\n", rank);
-		for(i=0;i<(maxn/size)+2;i++)
-		{
-			for(j=0;j<maxn;j++)
-			{
-				printf("%.2f ", f[i][j]);
-			}
-			printf("\n");		
-		}
-		printf("\n\n");
-		fflush(stdout);		
-	}
 	MPI_Barrier(MPI_COMM_WORLD);
-		
+
+	return 0;		
 }
